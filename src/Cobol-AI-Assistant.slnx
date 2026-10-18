@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../tests/CobolAssistant.Tests/CobolAssistant.Tests.csproj" />
+  <Project Path="CobolAssistant.Api/CobolAssistant.Api.csproj" />
+  <Project Path="CobolAssistant.Core/CobolAssistant.Core.csproj" />
+</Solution>
