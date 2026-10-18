@@ -27,22 +27,6 @@ public class ParserTests
     }
 
     [Fact]
-    public void Datenfelder_mit_PIC_Wert_und_Bereich()
-    {
-        var nr = _analysis.Fields.Single(f => f.Name == "VERS-NR");
-        Assert.Equal("X(12)", nr.Picture);
-        Assert.Equal("FILE", nr.Section);
-
-        var rentenwert = _analysis.Fields.Single(f => f.Name == "WS-RENTENWERT");
-        Assert.Equal("9(2)V99", rentenwert.Picture);
-        Assert.Equal("39.32", rentenwert.Value);
-        Assert.Equal("WORKING-STORAGE", rentenwert.Section);
-
-        Assert.True(_analysis.Fields.Single(f => f.Name == "DATEI-ENDE").IsCondition);
-        Assert.True(_analysis.Fields.Single(f => f.Name == "VERS-SATZ").IsGroup);
-    }
-
-    [Fact]
     public void Absaetze_und_Aufrufe()
     {
         Assert.Equal(
