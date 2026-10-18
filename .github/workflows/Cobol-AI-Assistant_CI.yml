@@ -1,4 +1,4 @@
-name: CI
+name: CI_Cobol-AI-Assistant
 
 on:
   push:
@@ -17,8 +17,22 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Abhängigkeiten wiederherstellen
+        run: dotnet restore
+
+      - name: Projekt erstellen
+        run: dotnet build --configuration Release --no-restore
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: .NET 8 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
       - name: Tests ausführen
         run: dotnet test tests/CobolAssistant.Tests/CobolAssistant.Tests.csproj -c Release --logger "console;verbosity=normal"
 
-      - name: Docker-Image bauen
-        run: docker build -t cobol-ai-assistant .
