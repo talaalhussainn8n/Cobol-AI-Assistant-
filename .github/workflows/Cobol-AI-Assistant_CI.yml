@@ -18,10 +18,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Abhängigkeiten wiederherstellen
-        run: dotnet restore src\CobolAssistant.Api\CobolAssistant.Api.csproj
+        run: dotnet restore src/CobolAssistant.Api/CobolAssistant.Api.csproj
 
       - name: Projekt erstellen
-        run: dotnet build src\CobolAssistant.Api\CobolAssistant.Api.csproj --configuration Release --no-restore
+        run: dotnet build src/CobolAssistant.Api/CobolAssistant.Api.csproj --configuration Release --no-restore
 
   test:
     runs-on: ubuntu-latest
