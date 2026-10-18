@@ -6,6 +6,7 @@ using CobolAssistant.Core.Generation;
 using CobolAssistant.Core.Llm;
 using CobolAssistant.Core.Parsing;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
 
 namespace CobolAssistant.Tests;
 

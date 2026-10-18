@@ -4,32 +4,17 @@ using System.Text.Json.Serialization;
 
 namespace CobolAssistant.Core.Llm;
 
-public sealed class LlmOptions
-{
-    /// <summary>OpenAI-kompatibler Endpunkt, z. B. https://api.openai.com/v1 oder lokal http://localhost:11434/v1 (Ollama).</summary>
-    public string? BaseUrl { get; set; }
-    public string? ApiKey { get; set; }
-    public string Model { get; set; } = "gpt-4o-mini";
-}
-
-public interface ILlmClient
-{
-    bool IsConfigured { get; }
-    Task<string> CompleteAsync(string system, string user, CancellationToken ct = default);
-}
-
 public sealed class OpenAiCompatibleClient : ILlmClient
 {
     private readonly HttpClient _http;
     private readonly LlmOptions _options;
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.BaseUrl);
 
     public OpenAiCompatibleClient(HttpClient http, LlmOptions options)
     {
         _http = http;
         _options = options;
     }
-
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.BaseUrl);
 
     public async Task<string> CompleteAsync(string system, string user, CancellationToken ct = default)
     {
