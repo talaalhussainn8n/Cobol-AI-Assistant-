@@ -1,0 +1,76 @@
+      *****************************************************************
+      * BEISPIELPROGRAMM: VEREINFACHTE BERECHNUNG EINER MONATSRENTE
+      * NUR ZU DEMONSTRATIONSZWECKEN, KEINE ECHTE RENTENFORMEL
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. RENTBER.
+       AUTHOR. DEMO.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT VERSICHERTE ASSIGN TO 'VERSICH.DAT'
+               ORGANIZATION IS LINE SEQUENTIAL.
+           SELECT ERGEBNIS ASSIGN TO 'RENTEN.DAT'
+               ORGANIZATION IS LINE SEQUENTIAL.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  VERSICHERTE.
+       01  VERS-SATZ.
+           05 VERS-NR            PIC X(12).
+           05 VERS-ENTGELTPUNKTE PIC 9(3)V99.
+           05 VERS-ZUGANGSFAKTOR PIC 9V999.
+       FD  ERGEBNIS.
+       01  ERG-SATZ.
+           05 ERG-NR             PIC X(12).
+           05 ERG-RENTE          PIC 9(5)V99.
+
+       WORKING-STORAGE SECTION.
+       01  WS-RENTENWERT         PIC 9(2)V99 VALUE 39.32.
+       01  WS-MONATSRENTE        PIC 9(5)V99 VALUE ZERO.
+       01  WS-EOF                PIC X VALUE 'N'.
+           88 DATEI-ENDE         VALUE 'J'.
+       01  WS-ANZAHL             PIC 9(6) VALUE ZERO.
+       01  WS-FEHLER             PIC 9(6) VALUE ZERO.
+
+       PROCEDURE DIVISION.
+       HAUPTPROGRAMM.
+           PERFORM INITIALISIEREN
+           PERFORM VERARBEITEN UNTIL DATEI-ENDE
+           PERFORM ABSCHLIESSEN
+           STOP RUN.
+
+       INITIALISIEREN.
+           OPEN INPUT VERSICHERTE
+           OPEN OUTPUT ERGEBNIS
+           PERFORM LESEN.
+
+       LESEN.
+           READ VERSICHERTE
+               AT END SET DATEI-ENDE TO TRUE
+           END-READ.
+
+       VERARBEITEN.
+           IF VERS-ZUGANGSFAKTOR = ZERO
+               ADD 1 TO WS-FEHLER
+           ELSE
+               PERFORM BERECHNEN
+               PERFORM SCHREIBEN
+           END-IF
+           PERFORM LESEN.
+
+       BERECHNEN.
+           COMPUTE WS-MONATSRENTE ROUNDED =
+               VERS-ENTGELTPUNKTE * VERS-ZUGANGSFAKTOR * WS-RENTENWERT
+           END-COMPUTE.
+
+       SCHREIBEN.
+           MOVE VERS-NR TO ERG-NR
+           MOVE WS-MONATSRENTE TO ERG-RENTE
+           WRITE ERG-SATZ
+           ADD 1 TO WS-ANZAHL.
+
+       ABSCHLIESSEN.
+           CLOSE VERSICHERTE ERGEBNIS
+           DISPLAY 'VERARBEITET: ' WS-ANZAHL ' FEHLER: ' WS-FEHLER.

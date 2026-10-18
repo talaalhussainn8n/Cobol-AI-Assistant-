@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COBOL-Assistent</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2933; background: #f5f7f6; }
+    header { background: #14532d; color: #fff; padding: 1rem 1.5rem; }
+    main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem 1.5rem; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    .card { background: #fff; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+    textarea { width: 100%; min-height: 520px; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 12px; }
+    button { font: inherit; padding: .45rem .9rem; border: 0; border-radius: 4px; background: #15803d; color: #fff; cursor: pointer; margin-right: .5rem; }
+    button.secondary { background: #e5e7eb; color: #111; }
+    .tabs button { background: #e5e7eb; color: #111; }
+    .tabs button.active { background: #15803d; color: #fff; }
+    .kpis { display: flex; gap: .75rem; margin: .75rem 0; }
+    .kpi { background: #f0fdf4; border-radius: 6px; padding: .5rem .75rem; } .kpi b { display: block; font-size: 1.3rem; }
+    table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: .35rem; text-align: left; }
+    .warn { color: #92400e; }
+    .pane { display: none; } .pane.active { display: block; }
+  </style>
+</head>
+<body>
+  <header><strong>COBOL-Assistent</strong> | Legacy-Code verstehen, dokumentieren und absichern</header>
+  <main>
+    <section class="card">
+      <button onclick="loadSample()" class="secondary">Beispiel laden</button>
+      <button onclick="analyze()">Analysieren</button>
+      <p></p>
+      <textarea id="source" placeholder="COBOL-Quelltext hier einfügen ..."></textarea>
+    </section>
+    <section class="card">
+      <div id="kpis" class="kpis"></div>
+      <div class="tabs">
+        <button data-tab="explain" class="active">Erklärung</button>
+        <button data-tab="docs">Dokumentation</button>
+        <button data-tab="graph">Aufrufgraph</button>
+        <button data-tab="tests">Testfälle</button>
+      </div>
+      <div id="explain" class="pane active"></div>
+      <div id="docs" class="pane"></div>
+      <div id="graph" class="pane"></div>
+      <div id="tests" class="pane"></div>
+    </section>
+  </main>
+<script>
+  mermaid.initialize({ startOnLoad: false });
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const md = text => DOMPurify.sanitize(marked.parse(text));
+
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.tabs button, .pane').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById(b.dataset.tab).classList.add('active');
+  });
+
+  async function loadSample() {
+    const res = await fetch('/api/sample');
+    document.getElementById('source').value = await res.text();
+  }
+
+  async function analyze() {
+    const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source: document.getElementById('source').value }) });
+    const r = await res.json();
+    if (!res.ok) return alert(r.error);
+
+    document.getElementById('kpis').innerHTML = `
+      <div class="kpi"><b>${escapeHtml(r.programId)}</b>Programm</div>
+      <div class="kpi"><b>${r.codeLines}</b>Codezeilen</div>
+      <div class="kpi"><b>${r.paragraphs.length}</b>Absätze</div>
+      <div class="kpi"><b>${r.complexity}</b>Komplexität</div>`;
+
+    document.getElementById('explain').innerHTML =
+      `<p><small>${r.explanationByLlm ? 'Erklärt durch Sprachmodell' : 'Regelbasierte Erklärung (kein Sprachmodell konfiguriert)'}</small></p>` +
+      md(r.explanation) +
+      (r.warnings.length ? `<h4>Hinweise</h4><ul>${r.warnings.map(w => `<li class="warn">${escapeHtml(w)}</li>`).join('')}</ul>` : '');
+
+    document.getElementById('docs').innerHTML = md(r.documentation.replace(/```mermaid[\s\S]*?```/, '(siehe Aufrufgraph)'));
+
+    const { svg } = await mermaid.render('callgraph' + Date.now(), r.callGraph);
+    document.getElementById('graph').innerHTML = svg;
+
+    document.getElementById('tests').innerHTML = `<table><thead><tr><th>ID</th><th>Feld</th><th>Eingabe</th><th>Erwartung</th><th>Grund</th></tr></thead><tbody>` +
+      r.testCases.map(t => `<tr><td>${escapeHtml(t.id)}</td><td>${escapeHtml(t.field)}</td><td>${escapeHtml(t.input)}</td><td>${escapeHtml(t.expectation)}</td><td>${escapeHtml(t.reason)}</td></tr>`).join('') +
+      '</tbody></table>';
+  }
+</script>
+</body>
+</html>
